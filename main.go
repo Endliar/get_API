@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"get_API/api/climacell"
 	"io"
 	"log"
 	"net/http"
@@ -8,6 +10,7 @@ import (
 )
 
 func main() {
+
 	os.Setenv("CLIMACELL_API_KEY", "GBznxyP89LiJRv4o39Hqa6M3962DKu9X")
 
 	req, err := http.NewRequest(http.MethodGet, "https://api.tomorrow.io/v4/timelines?location=40.75872069597532,-73.98529171943665&fields=temperature&timesteps=1h&units=metric&apikey=GBznxyP89LiJRv4o39Hqa6M3962DKu9X", nil)
@@ -28,4 +31,19 @@ func main() {
 	}
 
 	log.Println("We got the response:", string(responseBytes))
+
+	var weatherSamples []climacell.Weather
+	if err := json.Unmarshal(responseBytes, &weatherSamples); err != nil {
+		log.Fatalf("Ошибка десериализации данных погоды")
+	}
+
+	for _, w := range weatherSamples {
+		if w.Temp != nil && w.Temp.Value != nil {
+			log.Printf("Температура при %s равна %f градусов %s\n",
+				w.ObservationTime.Value, *w.Temp.Value, w.Temp.Units)
+		} else {
+			log.Printf("Нет доступных температурных данных %s\n", w.ObservationTime.Value)
+		}
+	}
+
 }
